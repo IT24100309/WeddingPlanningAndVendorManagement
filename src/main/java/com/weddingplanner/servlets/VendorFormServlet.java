@@ -50,17 +50,31 @@ public class VendorFormServlet extends HttpServlet {
 
         // Handle file uploads
         List<String> portfolioPaths = new ArrayList<>();
-        for (Part part : req.getParts()) {
-            if (part.getName().equals("portfolio") && part.getSize() > 0) {
-                String fileName = UUID.randomUUID() + "_" + part.getSubmittedFileName();
-                String uploadDir = getServletContext().getRealPath("/uploads/portfolio");
-                File dir = new File(uploadDir);
-                if (!dir.exists()) dir.mkdirs();
-                String filePath = uploadDir + File.separator + fileName;
-                part.write(filePath);
-                // Store relative path for web access
-                portfolioPaths.add("uploads/portfolio/" + fileName);
+        String uploadDir = getServletContext().getRealPath("/uploads/portfolio");
+        File dir = new File(uploadDir);
+        if (!dir.exists()) {
+            boolean created = dir.mkdirs();
+            if (!created) {
+                req.getSession().setAttribute("error", "Failed to create upload directory");
+                resp.sendRedirect(req.getContextPath() + "/vendorDashboard");
+                return;
             }
+        }
+
+        try {
+            for (Part part : req.getParts()) {
+                if (part.getName().equals("portfolio") && part.getSize() > 0) {
+                    String fileName = UUID.randomUUID() + "_" + part.getSubmittedFileName();
+                    String filePath = uploadDir + File.separator + fileName;
+                    part.write(filePath);
+                    // Store relative path for web access
+                    portfolioPaths.add("uploads/portfolio/" + fileName);
+                }
+            }
+        } catch (Exception e) {
+            req.getSession().setAttribute("error", "Failed to upload files: " + e.getMessage());
+            resp.sendRedirect(req.getContextPath() + "/vendorDashboard");
+            return;
         }
 
         // Collect form fields
@@ -106,7 +120,12 @@ public class VendorFormServlet extends HttpServlet {
                 currentPortfolio.addAll(portfolioPaths);
                 vendor.setPortfolio(currentPortfolio);
             }
-            vendorService.save(vendor); // update
+            try {
+                vendorService.save(vendor); // update
+                req.getSession().setAttribute("message", "Vendor updated successfully");
+            } catch (IOException e) {
+                req.getSession().setAttribute("error", "Failed to update vendor: " + e.getMessage());
+            }
         } else {
             vendor = new Vendor();
             vendor.setId(UUID.randomUUID().toString());
@@ -127,7 +146,23 @@ public class VendorFormServlet extends HttpServlet {
             vendor.setPortfolio(portfolioPaths);
             vendor.setRating(0.0);
             vendor.setReviews(new ArrayList<>());
-            vendorService.save(vendor); // add new
+            try {
+                vendorService.save(vendor); // add new
+                req.getSession().setAttribute("message", "Vendor added successfully");
+            } catch (IOException e) {
+                req.getSession().setAttribute("error", "Failed to add vendor: " + e.getMessage());
+            }
+        }
+
+        // Validate required fields
+        if (name == null || name.isBlank() || 
+            serviceType == null || serviceType.isBlank() ||
+            contactPerson == null || contactPerson.isBlank() ||
+            phoneNumber == null || phoneNumber.isBlank() ||
+            email == null || email.isBlank()) {
+            req.getSession().setAttribute("error", "Required fields cannot be empty");
+            resp.sendRedirect(req.getContextPath() + "/vendorDashboard");
+            return;
         }
 
         resp.sendRedirect(req.getContextPath() + "/vendorDashboard");
