@@ -2,12 +2,12 @@ package com.weddingplanner.utils;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.ArrayList;
 
 public class FileHandler {
     public List<String> readFromFile(String fileName) {
-        List<String> lines = new LinkedList<>();
+        CustomLinkedList<String> lines = new CustomLinkedList<>();
         File file = new File(fileName);
         if (!file.exists()) {
             try { 
@@ -27,7 +27,13 @@ public class FileHandler {
             System.err.println("Failed to read from file '" + fileName + "': " + e.getMessage());
             throw new RuntimeException("Could not read data file", e);
         }
-        return lines;
+        
+        // Convert CustomLinkedList to java.util.List for compatibility with existing code
+        List<String> result = new ArrayList<>();
+        for (String line : lines) {
+            result.add(line);
+        }
+        return result;
     }
 
     public void writeToFile(String fileName, List<String> data) {
