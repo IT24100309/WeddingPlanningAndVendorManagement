@@ -1,0 +1,198 @@
+@startuml Wedding Planner Class Diagram
+
+' Interfaces
+interface FileRepository<T> {
+    +save(T entity): void
+    +findById(id: String): T
+    +findAll(): List<T>
+    +update(T entity): void
+    +delete(id: String): void
+}
+
+' Abstract Classes
+abstract class AbstractFileRepository<T> {
+    #dataDirectory: Path
+    #fileExtension: String
+    #entityClass: Class<T>
+    -lock: ReentrantReadWriteLock
+    #AbstractFileRepository(directoryPath: String, fileExtension: String, entityClass: Class<T>)
+    #getEntityId(T entity): String
+}
+
+' Model Classes
+class User {
+    -id: String
+    -username: String
+    -passwordHash: String
+    -email: String
+    +User(username: String, passwordHash: String, email: String)
+    +User(id: String, username: String, passwordHash: String, email: String)
+    +getters()
+    +setters()
+}
+
+class Vendor {
+    -id: String
+    -name: String
+    -serviceType: String
+    -description: String
+    -contactPerson: String
+    -phoneNumber: String
+    -email: String
+    -website: String
+    -address: String
+    -priceRange: String
+    -availability: String
+    -rating: double
+    -reviews: List<String>
+    -portfolio: List<String>
+    -terms: String
+    -createdAt: LocalDateTime
+    -updatedAt: LocalDateTime
+    -status: String
+    +getters()
+    +setters()
+}
+
+class CateringVendor {
+    +getDetails(): String
+}
+
+class PhotographerVendor {
+    +getDetails(): String
+}
+
+class Booking {
+    -id: String
+    -vendorName: String
+    -customerName: String
+    -eventDate: LocalDate
+    -price: double
+    +Booking()
+    +Booking(vendorName: String, customerName: String, eventDate: LocalDate, price: double)
+    +getters()
+    +setters()
+}
+
+class Payment {
+    -id: String
+    -bookingId: String
+    -paymentDate: LocalDate
+    -amount: double
+    -method: String
+    +Payment()
+    +Payment(bookingId: String, paymentDate: LocalDate, amount: double, method: String)
+    +getters()
+    +setters()
+}
+
+' Repository Classes
+class UserRepository {
+    +UserRepository()
+    +findByEmail(email: String): Optional<User>
+}
+
+class VendorRepository {
+    -dataFilePath: String
+    -mapper: ObjectMapper
+    -lock: ReentrantReadWriteLock
+    +VendorRepository(context: ServletContext)
+    +save(vendor: Vendor): void
+    +findById(id: String): Vendor
+    +findAll(): List<Vendor>
+    +findByServiceType(serviceType: String): List<Vendor>
+    +delete(id: String): void
+}
+
+class BookingRepository {
+    -dataFilePath: String
+    -mapper: ObjectMapper
+    +BookingRepository(context: ServletContext)
+    +save(booking: Booking): void
+    +findById(id: String): Booking
+    +findAll(): List<Booking>
+    +findByCustomerName(customerName: String): List<Booking>
+    +findByVendorName(vendorName: String): List<Booking>
+    +update(booking: Booking): void
+    +delete(id: String): void
+}
+
+class PaymentRepository {
+    -dataFilePath: String
+    -mapper: ObjectMapper
+    +PaymentRepository(context: ServletContext)
+    +save(payment: Payment): void
+    +findById(id: String): Payment
+    +findAll(): List<Payment>
+    +findByBookingId(bookingId: String): List<Payment>
+    +findByMethod(method: String): List<Payment>
+    +update(payment: Payment): void
+    +delete(id: String): void
+}
+
+' Service Classes
+class UserService {
+    -users: List<User>
+    -dataFile: String
+    -fh: FileHandler
+    +UserService(ctx: ServletContext)
+    +register(user: User): boolean
+    +authenticate(username: String, password: String): User
+    +findByUsername(username: String): User
+}
+
+class VendorService {
+    -repository: VendorRepository
+    +VendorService(context: ServletContext)
+    +save(vendor: Vendor): void
+    +findById(id: String): Vendor
+    +findAll(): List<Vendor>
+    +findByServiceType(serviceType: String): List<Vendor>
+    +delete(id: String): void
+}
+
+class BookingService {
+    -repository: BookingRepository
+    +BookingService(context: ServletContext)
+    +save(booking: Booking): void
+    +findById(id: String): Booking
+    +findAll(): List<Booking>
+    +findByCustomerName(customerName: String): List<Booking>
+    +findByVendorName(vendorName: String): List<Booking>
+    +update(booking: Booking): void
+    +delete(id: String): void
+}
+
+class PaymentService {
+    -repository: PaymentRepository
+    +PaymentService(context: ServletContext)
+    +save(payment: Payment): void
+    +findById(id: String): Payment
+    +findAll(): List<Payment>
+    +findByBookingId(bookingId: String): List<Payment>
+    +findByMethod(method: String): List<Payment>
+    +update(payment: Payment): void
+    +delete(id: String): void
+}
+
+' Relationships
+FileRepository <|.. AbstractFileRepository
+AbstractFileRepository <|-- UserRepository
+UserRepository ..> User
+VendorRepository ..> Vendor
+BookingRepository ..> Booking
+PaymentRepository ..> Payment
+
+Vendor <|-- CateringVendor
+Vendor <|-- PhotographerVendor
+
+UserService --> UserRepository
+VendorService --> VendorRepository
+BookingService --> BookingRepository
+PaymentService --> PaymentRepository
+
+Booking --> User : customerName
+Booking --> Vendor : vendorName
+Payment --> Booking : bookingId
+
+@enduml 
