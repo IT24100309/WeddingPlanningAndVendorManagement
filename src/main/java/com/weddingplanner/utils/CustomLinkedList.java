@@ -73,6 +73,25 @@ public class CustomLinkedList<T> implements Iterable<T> {
     }
 
     /**
+     * Replaces the element at the specified position with the given data
+     * @param index The index of the element to replace
+     * @param data The new data to set
+     * @throws IndexOutOfBoundsException if index is out of range
+     */
+    public void set(int index, T data) {
+        if (index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException("Index: " + index + ", Size: " + size);
+        }
+
+        Node<T> current = head;
+        for (int i = 0; i < index; i++) {
+            current = current.next;
+        }
+
+        current.data = data;
+    }
+
+    /**
      * Removes the element at the specified position
      * @param index The index of the element to remove
      * @return The removed element
@@ -172,4 +191,4 @@ public class CustomLinkedList<T> implements Iterable<T> {
     public Iterable<T> elements() {
         return this::iterator;
     }
-} 
+}
